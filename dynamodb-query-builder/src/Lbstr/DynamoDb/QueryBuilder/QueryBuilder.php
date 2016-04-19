@@ -22,7 +22,7 @@ class QueryBuilder extends AbstractQueryBuilder {
      */
     function batchWriteItem() {
 
-        return new BatchWriteItem(new Marshaler());
+        return new BatchWriteItem($this->marshaler);
     }
 
     /**
@@ -32,7 +32,7 @@ class QueryBuilder extends AbstractQueryBuilder {
      */
     function scan($tableName) {
 
-        return new Scan(new Marshaler(), $tableName);
+        return new Scan($this->marshaler, $tableName);
     }
 
 }
