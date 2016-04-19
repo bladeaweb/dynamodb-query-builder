@@ -1,0 +1,14 @@
+{
+    "name": "lbstr/dynamodb-query-builder",
+    "description": "Amazon DynamoDb query builder.",
+    "require": {
+        "aws/aws-sdk-php": "3.0"
+    },
+    "authors": [
+        {
+            "name": "Leonid Bobylev",
+            "email": "leonbobster@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev"
+}
