@@ -11,7 +11,7 @@
             "email": "leonbobster@gmail.com"
         }
     ],
-    "minimum-stability": "alpha",
+    "minimum-stability": "dev",
     "autoload": {
         "psr-4" : {
             "Lbstr\\": "dynamodb-query-builder/src/Lbstr/"
