@@ -28,4 +28,5 @@ class QueryBuilderException extends \Exception {
 
         return new self($message, $code, $previous);
     }
+    
 }
