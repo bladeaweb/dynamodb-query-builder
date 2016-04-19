@@ -6,6 +6,6 @@
  * Time: 7:38 PM
  */
 
-require_once __DIR__ . '/../../vendor/autoload.php';
-require_once __DIR__ . '/../../dynamodb-query-builder/test/DynamoDbTestCase.php';
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../test/DynamoDbTestCase.php';
 
