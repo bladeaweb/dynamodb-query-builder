@@ -14,7 +14,7 @@
     "minimum-stability": "stable",
     "autoload": {
         "psr-4" : {
-            "Lbstr\\": "dynamodb-query-builder/src/Lbstr/"
+            "Lbstr\\": "src/Lbstr/"
         }
     }
 }
