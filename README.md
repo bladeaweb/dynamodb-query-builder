@@ -63,4 +63,19 @@ $q = $qb->scan($tableName)
         ->contains('#name', 'oo')
         ->orContains('#name', 'az')
         ->getQuery();
+        
+// sub-query example
+$qb = $this->getQueryBuilder()
+    ->scan('MyTable')
+    ->withAttributeNames(['#name' => 'name', '#status' => 'status'])
+    ->eq('#status', 'error')
+    ->subQuery(
+        $this->getQueryBuilder()
+            ->scan('MyTable')
+            ->withAttributeNames(['#name' => 'name'])
+            ->beginsWith('#name', 'ja')
+            ->orBeginsWith('#name', 'fo')
+    );
+    
+$items = $this->db()->scan($qb->getQuery())['Items'];
 ```
