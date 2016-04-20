@@ -72,7 +72,8 @@ $qb = $qb->scan('MyTable')
             $qb->scan('MyTable')
                 ->withAttributeNames(['#name' => 'name'])
                 ->beginsWith('#name', 'ja')
-                ->orBeginsWith('#name', 'fo')
+                ->orBeginsWith('#name', 'fo'),
+            'and'
         );
 
 /*
