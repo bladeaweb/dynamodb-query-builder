@@ -76,6 +76,38 @@ $qb = $this->getQueryBuilder()
             ->beginsWith('#name', 'ja')
             ->orBeginsWith('#name', 'fo')
     );
+
+/*
+Array
+(
+    [TableName] => FooBar
+    [FilterExpression] => (#status = :571769ca57e29 and (begins_with(#name, :571769ca57eb9) or begins_with(#name, :571769ca57f26)))
+    [ExpressionAttributeValues] => Array
+        (
+            [:571769ca57e29] => Array
+                (
+                    [S] => error
+                )
+
+            [:571769ca57eb9] => Array
+                (
+                    [S] => ja
+                )
+
+            [:571769ca57f26] => Array
+                (
+                    [S] => fo
+                )
+
+        )
+
+    [ExpressionAttributeNames] => Array
+        (
+            [#name] => name
+            [#status] => status
+        )
+
+)*/
     
 $items = $this->db()->scan($qb->getQuery())['Items'];
 ```
