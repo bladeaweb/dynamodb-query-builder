@@ -278,6 +278,11 @@ class Scan extends AbstractQueryBuilder {
         return $this->in($key, $values, self::OPERATOR_OR);
     }
 
+    function subQuery(Scan $query, $operator = 'and') {
+
+        
+    }
+
     /**
      * @return array
      */
