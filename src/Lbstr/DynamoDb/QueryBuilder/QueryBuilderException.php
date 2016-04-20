@@ -18,12 +18,12 @@ class QueryBuilderException extends \Exception {
     /**
      * @param string         $message
      * @param int            $code
-     * @param Exception|null $previous
+     * @param \Exception|null $previous
      *
      * @return QueryBuilderException
      */
     static function invalidExpression($message = 'Invalid filter expression', $code = 0,
-        Exception $previous = null
+        \Exception $previous = null
     ) {
 
         return new self($message, $code, $previous);

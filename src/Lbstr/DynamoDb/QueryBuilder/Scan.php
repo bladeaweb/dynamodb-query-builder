@@ -9,6 +9,12 @@
 namespace Lbstr\DynamoDb\QueryBuilder;
 
 use Aws\DynamoDb\Marshaler;
+use Lbstr\DynamoDb\QueryBuilder\Expression\BeginsWithExpression;
+use Lbstr\DynamoDb\QueryBuilder\Expression\ContainsExpression;
+use Lbstr\DynamoDb\QueryBuilder\Expression\EqExpression;
+use Lbstr\DynamoDb\QueryBuilder\Expression\ExpressionCollection;
+use Lbstr\DynamoDb\QueryBuilder\Expression\GenericExpression;
+use Lbstr\DynamoDb\QueryBuilder\Expression\InExpression;
 
 /**
  * Class Scan
@@ -16,11 +22,6 @@ use Aws\DynamoDb\Marshaler;
  * @package Lbstr\DynamoDb\QueryBuilder
  */
 class Scan extends AbstractQueryBuilder {
-
-    const EXPRESSION_EQ = 'eq';
-    const EXPRESSION_CONTAINS = 'contains';
-    const EXPRESSION_BEGINS_WITH = 'beginsWith';
-    const EXPRESSION_IN = 'in';
 
     const OPERATOR_AND = 'and';
     const OPERATOR_OR = 'or';
@@ -48,6 +49,11 @@ class Scan extends AbstractQueryBuilder {
     protected $tableName;
 
     /**
+     * @var ExpressionCollection
+     */
+    protected $expressions;
+
+    /**
      * Scan constructor.
      *
      * @param Marshaler $marshaler
@@ -57,6 +63,12 @@ class Scan extends AbstractQueryBuilder {
 
         parent::__construct($marshaler);
         $this->tableName = $tableName;
+        $this->expressions = new ExpressionCollection();
+    }
+
+    function getExpressions() {
+
+        return $this->expressions;
     }
 
     /**
@@ -71,50 +83,6 @@ class Scan extends AbstractQueryBuilder {
         return $this;
     }
 
-    protected function addFilterExpression($expression, $key, $value, $operator = self::OPERATOR_AND
-    ) {
-
-        if (count($this->filterExpression)) {
-            $this->filterExpression[] = $operator;
-        }
-        $this->filterExpression[] = sprintf(
-            $this->expression($expression), $key, $this->paramNum()
-        );
-        $this->expressionAttributeValues += $this->marshaler->marshalItem($value);
-
-        return $this;
-    }
-
-    /**
-     * @return int
-     */
-    protected function paramNum() {
-
-        return count($this->expressionAttributeValues);
-    }
-
-    /**
-     * @param $expression
-     *
-     * @return string
-     * @throws QueryBuilderException
-     */
-    protected function expression($expression) {
-
-        switch ($expression) {
-            case self::EXPRESSION_EQ:
-                return '%s = :p%d';
-            case self::EXPRESSION_CONTAINS:
-                return 'contains(%s, :p%d)';
-            case self::EXPRESSION_BEGINS_WITH:
-                return 'begins_with(%s, :p%d)';
-            case self::EXPRESSION_IN:
-                return '%s in (%s)';
-        }
-
-        throw QueryBuilderException::invalidExpression();
-    }
-
     /**
      * @param string $key
      * @param mixed  $value
@@ -124,9 +92,14 @@ class Scan extends AbstractQueryBuilder {
      */
     function eq($key, $value, $operator = self::OPERATOR_AND) {
 
-        return $this->addFilterExpression(
-            self::EXPRESSION_EQ, $key, [':p' . $this->paramNum() => $value], $operator
-        );
+        $expression = new EqExpression($this->marshaler);
+        $expression->setKey($key)
+            ->setValue($value)
+            ->setOperator($operator);
+
+        $this->expressions->addExpression($expression);
+
+        return $this;
     }
 
     /**
@@ -160,9 +133,14 @@ class Scan extends AbstractQueryBuilder {
      */
     function contains($key, $value, $operator = self::OPERATOR_AND) {
 
-        return $this->addFilterExpression(
-            self::EXPRESSION_CONTAINS, $key, [':p' . $this->paramNum() => $value], $operator
-        );
+        $expression = new ContainsExpression($this->marshaler);
+        $expression->setKey($key)
+            ->setValue($value)
+            ->setOperator($operator);
+
+        $this->expressions->addExpression($expression);
+
+        return $this;
     }
 
     /**
@@ -196,9 +174,14 @@ class Scan extends AbstractQueryBuilder {
      */
     function beginsWith($key, $value, $operator = 'and') {
 
-        return $this->addFilterExpression(
-            self::EXPRESSION_BEGINS_WITH, $key, [':p' . $this->paramNum() => $value], $operator
-        );
+        $expression = new BeginsWithExpression($this->marshaler);
+        $expression->setKey($key)
+            ->setValue($value)
+            ->setOperator($operator);
+
+        $this->expressions->addExpression($expression);
+
+        return $this;
     }
 
     /**
@@ -232,26 +215,12 @@ class Scan extends AbstractQueryBuilder {
      */
     function in($key, array $values, $operator = self::OPERATOR_AND) {
 
-        if (!count($values)) {
-            return;
-        }
-        if (count($this->filterExpression)) {
-            $this->filterExpression[] = $operator;
-        }
+        $expression = new InExpression($this->marshaler);
+        $expression->setKey($key)
+            ->setValue($values)
+            ->setOperator($operator);
 
-        $params = $expressionAttributeValues = [];
-        $values = array_unique($values);
-        for ($i = 0; $i < count($values); $i++) {
-            $params[] = sprintf(':p%d', $this->paramNum());
-            $this->expressionAttributeValues += $this->marshaler->marshalItem(
-                [
-                    $params[$i] => $values[$i]
-                ]
-            );
-        }
-        $this->filterExpression[] = sprintf(
-            $this->expression(self::EXPRESSION_IN), $key, implode(', ', $params)
-        );
+        $this->expressions->addExpression($expression);
 
         return $this;
     }
@@ -278,9 +247,23 @@ class Scan extends AbstractQueryBuilder {
         return $this->in($key, $values, self::OPERATOR_OR);
     }
 
-    function subQuery(Scan $query, $operator = 'and') {
+    /**
+     * @param Scan   $qb
+     * @param string $operator
+     *
+     * @return $this
+     */
+    function subQuery(Scan $qb, $operator = 'and') {
 
-        
+        $this->expressions->addExpression(
+            new GenericExpression(
+                $qb->getExpressions()->getExpressionString(),
+                $qb->getExpressions()->getValue(),
+                $operator
+            )
+        );
+
+        return $this;
     }
 
     /**
@@ -288,14 +271,10 @@ class Scan extends AbstractQueryBuilder {
      */
     function getQuery() {
 
-        if (!count($this->filterExpression) || !count($this->expressionAttributeValues)) {
-            return [];
-        }
-
         $query = [
             'TableName'                 => $this->tableName,
-            'FilterExpression'          => implode(' ', $this->filterExpression),
-            'ExpressionAttributeValues' => $this->expressionAttributeValues
+            'FilterExpression'          => $this->expressions->getExpressionString(),
+            'ExpressionAttributeValues' => $this->expressions->getValue()
         ];
 
         if (count($this->expressionAttributeNames)) {

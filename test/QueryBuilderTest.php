@@ -13,21 +13,25 @@ class QueryBuilderTest extends DynamoDbTestCase {
 
     protected $tableName = 'FooBar';
 
-    protected $fixture = [
-        [
-            'id'   => 185,
-            'name' => 'foo'
-        ],
-        [
-            'id'   => 256,
-            'name' => 'baz'
-        ],
-        [
-            'id'   => 643,
-            'name' => 'bat'
-        ],
+    protected $fixture
+        = [
+            [
+                'id'     => 185,
+                'name'   => 'foo',
+                'status' => 'alert'
+            ],
+            [
+                'id'     => 256,
+                'name'   => 'baz',
+                'status' => 'success'
+            ],
+            [
+                'id'     => 643,
+                'name'   => 'bat',
+                'status' => 'stopped'
+            ],
 
-    ];
+        ];
 
     function setUp() {
 
@@ -194,7 +198,6 @@ class QueryBuilderTest extends DynamoDbTestCase {
         $this->assertEquals($result[1]['name'], ['S' => 'lorem']);
     }
 
-
     function testScanIn() {
 
         $q = $this->getQueryBuilder()
@@ -210,6 +213,67 @@ class QueryBuilderTest extends DynamoDbTestCase {
         $this->assertEquals($result[0]['name'], ['S' => 'bat']);
         $this->assertEquals($result[1]['name'], ['S' => 'baz']);
         $this->assertEquals($result[2]['name'], ['S' => 'foo']);
+    }
+
+    function testSubQuery() {
+
+        $q = $this->getQueryBuilder()->batchWriteItem()
+            ->put(
+                $this->tableName,
+                [
+                    'id'     => 33434,
+                    'name'   => 'foobar',
+                    'status' => 'error'
+                ]
+            )
+            ->put(
+                $this->tableName,
+                [
+                    'id'     => 4343,
+                    'name'   => 'bazbat',
+                    'status' => 'success'
+                ]
+            )
+            ->put(
+                $this->tableName,
+                [
+                    'id'     => 3312,
+                    'name'   => 'jazz',
+                    'status' => 'error'
+                ]
+            )
+            ->put(
+                $this->tableName,
+                [
+                    'id'     => 12312,
+                    'name'   => 'blues',
+                    'status' => 'error'
+                ]
+            )
+            ->getQuery();
+
+        $this->db()->batchWriteItem($q);
+
+        $qb = $this->getQueryBuilder()
+            ->scan($this->tableName)
+            ->withAttributeNames(['#name' => 'name', '#status' => 'status'])
+            ->eq('#status', 'error')
+            ->subQuery(
+                $this->getQueryBuilder()
+                    ->scan($this->tableName)
+                    ->withAttributeNames(['#name' => 'name'])
+                    ->beginsWith('#name', 'ja')
+                    ->orBeginsWith('#name', 'fo')
+            );
+
+        $items = $this->db()->scan($qb->getQuery())['Items'];
+
+        $this->assertEquals(count($items), 2);
+        foreach ($items as $item) {
+            $item = $this->getMarshaler()->unmarshalItem($item);
+            $this->assertEquals($item['status'], 'error');
+            $this->assertEquals(1, preg_match('/^(ja|fo).*$/', $item['name']));
+        }
     }
 
 }
