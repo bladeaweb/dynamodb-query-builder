@@ -65,17 +65,16 @@ $q = $qb->scan($tableName)
         ->getQuery();
         
 // sub-query example
-$qb = $this->getQueryBuilder()
-    ->scan('MyTable')
-    ->withAttributeNames(['#name' => 'name', '#status' => 'status'])
-    ->eq('#status', 'error')
-    ->subQuery(
-        $this->getQueryBuilder()
-            ->scan('MyTable')
-            ->withAttributeNames(['#name' => 'name'])
-            ->beginsWith('#name', 'ja')
-            ->orBeginsWith('#name', 'fo')
-    );
+$qb = $qb->scan('MyTable')
+        ->withAttributeNames(['#name' => 'name', '#status' => 'status'])
+        ->eq('#status', 'error')
+        ->subQuery(
+            $qb->scan('MyTable')
+                ->withAttributeNames(['#name' => 'name'])
+                ->beginsWith('#name', 'ja')
+                ->orBeginsWith('#name', 'fo'),
+            'and'
+        );
 
 /*
 Array
