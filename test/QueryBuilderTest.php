@@ -125,8 +125,6 @@ class QueryBuilderTest extends DynamoDbTestCase {
 
         $this->assertEquals(count($result), 1);
         $this->assertEquals($result[0]['id'], ['N' => 256]);
-
-        $this->deleteTable($this->tableName);
     }
 
 
@@ -213,6 +211,46 @@ class QueryBuilderTest extends DynamoDbTestCase {
         $this->assertEquals($result[0]['name'], ['S' => 'bat']);
         $this->assertEquals($result[1]['name'], ['S' => 'baz']);
         $this->assertEquals($result[2]['name'], ['S' => 'foo']);
+    }
+
+    /**
+     *
+     */
+    function testScanNotEq() {
+
+        $id = 256;
+        $q = $this->getQueryBuilder()
+            ->scan($this->tableName)
+            ->notEq('id', $id)
+            ->getQuery();
+
+        $result = $this->db()->scan($q)['Items'];
+
+        $this->assertEquals(count($result), 2);
+
+        $idArray = array_map(
+            function ($item) {
+                return $item['id']['N'];
+            },
+            $result
+        );
+
+        $this->assertFalse(in_array($id, $idArray));
+    }
+
+    function testScanAndNotEq() {
+
+        $id = 256;
+        $q = $this->getQueryBuilder()
+            ->scan($this->tableName)
+            ->notEq('id', $id)
+            ->andNotEq('id', 185)
+            ->getQuery();
+
+        $result = $this->db()->scan($q)['Items'];
+
+        $this->assertEquals(count($result), 1);
+        $this->assertEquals($result[0]['id']['N'], 643);
     }
 
     function testSubQuery() {

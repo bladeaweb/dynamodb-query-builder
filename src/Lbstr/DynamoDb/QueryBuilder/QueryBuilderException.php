@@ -16,8 +16,8 @@ namespace Lbstr\DynamoDb\QueryBuilder;
 class QueryBuilderException extends \Exception {
 
     /**
-     * @param string         $message
-     * @param int            $code
+     * @param string          $message
+     * @param int             $code
      * @param \Exception|null $previous
      *
      * @return QueryBuilderException
@@ -27,5 +27,19 @@ class QueryBuilderException extends \Exception {
     ) {
 
         return new self($message, $code, $previous);
+    }
+
+    /**
+     * @param string $expression
+     *
+     * @return QueryBuilderException
+     */
+    static function expressionNotFound($expression) {
+
+        return new self(
+            sprintf(
+                'Expression "%s" not found', htmlspecialchars($expression)
+            )
+        );
     }
 }

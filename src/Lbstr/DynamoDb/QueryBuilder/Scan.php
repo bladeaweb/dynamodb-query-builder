@@ -11,13 +11,23 @@ namespace Lbstr\DynamoDb\QueryBuilder;
 use Aws\DynamoDb\Marshaler;
 use Lbstr\DynamoDb\QueryBuilder\Expression\BeginsWithExpression;
 use Lbstr\DynamoDb\QueryBuilder\Expression\ContainsExpression;
-use Lbstr\DynamoDb\QueryBuilder\Expression\EqExpression;
 use Lbstr\DynamoDb\QueryBuilder\Expression\ExpressionCollection;
+use Lbstr\DynamoDb\QueryBuilder\Expression\Factory;
 use Lbstr\DynamoDb\QueryBuilder\Expression\GenericExpression;
 use Lbstr\DynamoDb\QueryBuilder\Expression\InExpression;
 
 /**
  * Class Scan
+ *
+ * @method Scan andNotEq(string $key, string $value) Add "Or Not Equal" condition to query.
+ * @method Scan andEq(string $key, string $value) Add "And Equal" condition to query.
+ * @method Scan orEq(string $key, string $value) Add "Or Equal" condition to query.
+ * @method Scan andContains(string $key, string $value) Add "And Contains" condition to query.
+ * @method Scan orContains(string $key, string $value) Add "Or Contains" condition to query.
+ * @method Scan andBeginsWith(string $key, string $value) Add "And Begins With" condition to query.
+ * @method Scan orBeginsWith(string $key, string $value) Add "Or Begins With" condition to query.
+ * @method Scan andIn(string $key, string $value) Add "And In" condition to query.
+ * @method Scan orIn(string $key, string $value) Add "Or In" condition to query.
  *
  * @package Lbstr\DynamoDb\QueryBuilder
  */
@@ -25,18 +35,6 @@ class Scan extends AbstractQueryBuilder {
 
     const OPERATOR_AND = 'and';
     const OPERATOR_OR = 'or';
-
-    /**
-     *
-     * @var array
-     */
-    protected $filterExpression = [];
-
-    /**
-     *
-     * @var array
-     */
-    protected $expressionAttributeValues = [];
 
     /**
      * @var array
@@ -54,16 +52,50 @@ class Scan extends AbstractQueryBuilder {
     protected $expressions;
 
     /**
+     * @var Factory
+     */
+    protected $expressionFactory;
+
+    /**
      * Scan constructor.
      *
      * @param Marshaler $marshaler
      * @param string    $tableName
      */
-    function __construct(Marshaler $marshaler, $tableName) {
+    function __construct(Marshaler $marshaler, $tableName, Factory $expressionFactory = null) {
 
         parent::__construct($marshaler);
         $this->tableName = $tableName;
         $this->expressions = new ExpressionCollection();
+        if ($expressionFactory === null) {
+            $expressionFactory = new Factory(
+                $marshaler
+            );
+        }
+        $this->expressionFactory = $expressionFactory;
+    }
+
+    /**
+     * @param string $name
+     * @param array  $arguments
+     *
+     * @return mixed
+     */
+    function __call($name, $arguments) {
+
+        if (preg_match('/(or|and)(.*)/', $name, $m)) {
+
+            $arguments[] = $m[1];
+            return call_user_func_array(
+                [$this, lcfirst($m[2])], $arguments
+            );
+        }
+
+        throw new \BadMethodCallException(
+            sprintf(
+                'Bad method call "%s"', htmlspecialchars($name)
+            )
+        );
     }
 
     function getExpressions() {
@@ -92,12 +124,16 @@ class Scan extends AbstractQueryBuilder {
      */
     function eq($key, $value, $operator = self::OPERATOR_AND) {
 
-        $expression = new EqExpression($this->marshaler);
-        $expression->setKey($key)
-            ->setValue($value)
-            ->setOperator($operator);
-
-        $this->expressions->addExpression($expression);
+        $this->expressions->addExpression(
+            $this->expressionFactory->getExpression(
+                [
+                    'expression' => 'Eq',
+                    'key'        => $key,
+                    'value'      => $value,
+                    'operator'   => $operator
+                ]
+            )
+        );
 
         return $this;
     }
@@ -105,23 +141,24 @@ class Scan extends AbstractQueryBuilder {
     /**
      * @param string $key
      * @param mixed  $value
+     * @param string $operator
      *
      * @return Scan
      */
-    function andEq($key, $value) {
+    function notEq($key, $value, $operator = self::OPERATOR_AND) {
 
-        return $this->eq($key, $value);
-    }
+        $this->expressions->addExpression(
+            $this->expressionFactory->getExpression(
+                [
+                    'expression' => 'NotEq',
+                    'key'        => $key,
+                    'value'      => $value,
+                    'operator'   => $operator
+                ]
+            )
+        );
 
-    /**
-     * @param string $key
-     * @param mixed  $value
-     *
-     * @return Scan
-     */
-    function orEq($key, $value) {
-
-        return $this->eq($key, $value, self::OPERATOR_OR);
+        return $this;
     }
 
     /**
@@ -146,28 +183,6 @@ class Scan extends AbstractQueryBuilder {
     /**
      * @param string $key
      * @param mixed  $value
-     *
-     * @return Scan
-     */
-    function andContains($key, $value) {
-
-        return $this->contains($key, $value);
-    }
-
-    /**
-     * @param string $key
-     * @param mixed  $value
-     *
-     * @return Scan
-     */
-    function orContains($key, $value) {
-
-        return $this->contains($key, $value, self::OPERATOR_OR);
-    }
-
-    /**
-     * @param string $key
-     * @param mixed  $value
      * @param string $operator
      *
      * @return Scan
@@ -182,28 +197,6 @@ class Scan extends AbstractQueryBuilder {
         $this->expressions->addExpression($expression);
 
         return $this;
-    }
-
-    /**
-     * @param string $key
-     * @param mixed  $value
-     *
-     * @return Scan
-     */
-    function andBeginsWith($key, $value) {
-
-        return $this->beginsWith($key, $value);
-    }
-
-    /**
-     * @param string $key
-     * @param mixed  $value
-     *
-     * @return Scan
-     */
-    function orBeginsWith($key, $value) {
-
-        return $this->beginsWith($key, $value, self::OPERATOR_OR);
     }
 
     /**
@@ -223,28 +216,6 @@ class Scan extends AbstractQueryBuilder {
         $this->expressions->addExpression($expression);
 
         return $this;
-    }
-
-    /**
-     * @param string $key
-     * @param array  $values
-     *
-     * @return Scan
-     */
-    function andIn($key, array $values) {
-
-        return $this->in($key, $values);
-    }
-
-    /**
-     * @param string $key
-     * @param array  $values
-     *
-     * @return Scan
-     */
-    function orIn($key, array $values) {
-
-        return $this->in($key, $values, self::OPERATOR_OR);
     }
 
     /**

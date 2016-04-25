@@ -48,6 +48,13 @@ abstract class AbstractExpression implements ExpressionInterface {
     }
 
     /**
+     * @param mixed $value
+     *
+     * @return mixed
+     */
+    abstract function setValue($value);
+
+    /**
      * @param string $key
      *
      * @return $this

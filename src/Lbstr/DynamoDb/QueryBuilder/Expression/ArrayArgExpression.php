@@ -42,8 +42,15 @@ abstract class ArrayArgExpression extends AbstractExpression {
      * @param array $value
      *
      * @return $this
+     * @throws \InvalidArgumentException
      */
-    function setValue(array $value) {
+    function setValue($value) {
+
+        if(!is_array($value)) {
+            throw new \InvalidArgumentException(
+                'Argument should be array'
+            );
+        }
 
         foreach ($value as $val) {
             $this->value += $this->marshaler->marshalItem(
