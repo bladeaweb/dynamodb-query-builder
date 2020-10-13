@@ -1,5 +1,5 @@
 {
-    "name": "lbstr/dynamodb-query-builder",
+    "name": "bladeaweb/dynamodb-query-builder",
     "description": "Amazon DynamoDb query builder.",
     "require": {
         "php": ">=5.6.0"
