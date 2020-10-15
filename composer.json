@@ -8,6 +8,10 @@
         {
             "name": "Leonid Bobylev",
             "email": "leonbobster@gmail.com"
+        },
+        {
+            "name": "Alex Sharkov",
+            "email": "blade.didan@gmail.com"
         }
     ],
     "minimum-stability": "stable",

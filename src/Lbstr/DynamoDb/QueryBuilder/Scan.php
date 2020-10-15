@@ -138,6 +138,98 @@ class Scan extends AbstractQueryBuilder {
         return $this;
     }
 
+  /**
+   * @param string $key
+   * @param int|float  $value
+   * @param string $operator
+   *
+   * @return Scan
+   */
+  function gt($key, $value, $operator = self::OPERATOR_AND) {
+
+    $this->expressions->addExpression(
+      $this->expressionFactory->getExpression(
+        [
+          'expression' => 'Gt',
+          'key'        => $key,
+          'value'      => $value,
+          'operator'   => $operator
+        ]
+      )
+    );
+
+    return $this;
+  }
+
+  /**
+   * @param string $key
+   * @param int|float  $value
+   * @param string $operator
+   *
+   * @return Scan
+   */
+  function lt($key, $value, $operator = self::OPERATOR_AND) {
+
+    $this->expressions->addExpression(
+      $this->expressionFactory->getExpression(
+        [
+          'expression' => 'Lt',
+          'key'        => $key,
+          'value'      => $value,
+          'operator'   => $operator
+        ]
+      )
+    );
+
+    return $this;
+  }
+
+  /**
+   * @param string $key
+   * @param int|float  $value
+   * @param string $operator
+   *
+   * @return Scan
+   */
+  function gtEq($key, $value, $operator = self::OPERATOR_AND) {
+
+    $this->expressions->addExpression(
+      $this->expressionFactory->getExpression(
+        [
+          'expression' => 'GtEq',
+          'key'        => $key,
+          'value'      => $value,
+          'operator'   => $operator
+        ]
+      )
+    );
+
+    return $this;
+  }
+
+  /**
+   * @param string $key
+   * @param int|float  $value
+   * @param string $operator
+   *
+   * @return Scan
+   */
+  function ltEq($key, $value, $operator = self::OPERATOR_AND) {
+
+    $this->expressions->addExpression(
+      $this->expressionFactory->getExpression(
+        [
+          'expression' => 'LtEq',
+          'key'        => $key,
+          'value'      => $value,
+          'operator'   => $operator
+        ]
+      )
+    );
+
+    return $this;
+  }
+
     /**
      * @param string $key
      * @param mixed  $value
